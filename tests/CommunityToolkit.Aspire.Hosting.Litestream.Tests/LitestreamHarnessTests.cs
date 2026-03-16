@@ -1,23 +1,21 @@
+using Aspire.Hosting.ApplicationModel;
 using CommunityToolkit.Aspire.Testing;
+using System.Net;
 using System.Net.Http.Json;
 
 namespace CommunityToolkit.Aspire.Hosting.Litestream.Tests;
 
 [RequiresDocker]
-[Trait("category", "failing")]
 public class LitestreamHarnessTests(
     AspireIntegrationTestFixture<Projects.CommunityToolkit_Aspire_Litestream_Testing_AppHost> fixture)
     : IClassFixture<AspireIntegrationTestFixture<Projects.CommunityToolkit_Aspire_Litestream_Testing_AppHost>>
 {
     [Fact]
-    public async Task SingleDatabaseReplication_RemainsRedUntilLitestreamIntegrationExists()
+    public async Task SingleDatabaseReplication_RestoresFromRemoteReplica()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(2));
+        using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(3));
 
         await WaitForHarnessAsync(cts.Token);
-
-        var minioConnectionString = await fixture.GetConnectionString("minio");
-        Assert.NotNull(minioConnectionString);
 
         var writer = fixture.CreateHttpClient("writer");
         var verifier = fixture.CreateHttpClient("verifier");
@@ -29,10 +27,13 @@ public class LitestreamHarnessTests(
         Assert.NotNull(verifierConfig);
         Assert.NotEqual(writerConfig.SingleDatabasePath, verifierConfig.SingleDatabasePath);
         Assert.Equal(writerConfig.ReplicaBucketName, verifierConfig.ReplicaBucketName);
+        Assert.NotEqual(writerConfig.StorageRoot, verifierConfig.StorageRoot);
 
         var value = $"single-{Guid.NewGuid():N}";
         var writeResponse = await writer.PostAsync($"/single/{value}", content: null, cts.Token);
         Assert.Equal(HttpStatusCode.Created, writeResponse.StatusCode);
+
+        await WaitForRestoreAsync(verifier, "/restore/single", cts.Token);
 
         var verifyResponse = await verifier.GetAsync("/single", cts.Token);
         string? verifiedValue = null;
@@ -49,9 +50,9 @@ public class LitestreamHarnessTests(
     }
 
     [Fact]
-    public async Task GroupedDatabaseReplication_RemainsRedUntilLitestreamIntegrationExists()
+    public async Task GroupedDatabaseReplication_RestoresFromRemoteReplica()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(2));
+        using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(3));
 
         await WaitForHarnessAsync(cts.Token);
 
@@ -65,25 +66,44 @@ public class LitestreamHarnessTests(
         Assert.NotNull(verifierConfig);
         Assert.NotEqual(writerConfig.GroupDatabaseDirectory, verifierConfig.GroupDatabaseDirectory);
         Assert.Equal(writerConfig.ReplicaBucketName, verifierConfig.ReplicaBucketName);
+        Assert.Equal(writerConfig.SeededGroupDatabaseNames, verifierConfig.SeededGroupDatabaseNames);
+        Assert.NotEqual(writerConfig.StorageRoot, verifierConfig.StorageRoot);
+        Assert.True(
+            writerConfig.SeededGroupDatabaseNames.Length >= 2,
+            "Expected the harness to provide at least two grouped database names for directory replication validation.");
 
-        var tenantName = $"tenant-{Guid.NewGuid():N}";
-        var value = $"group-{Guid.NewGuid():N}";
+        string firstDatabaseName = writerConfig.SeededGroupDatabaseNames[0];
+        string secondDatabaseName = writerConfig.SeededGroupDatabaseNames[1];
+        string firstValue = $"group-{Guid.NewGuid():N}";
+        string secondValue = $"group-{Guid.NewGuid():N}";
 
-        var writeResponse = await writer.PostAsync($"/groups/{tenantName}/{value}", content: null, cts.Token);
-        Assert.Equal(HttpStatusCode.Created, writeResponse.StatusCode);
+        using HttpResponseMessage firstWriteResponse = await writer.PostAsync($"/groups/{firstDatabaseName}/{firstValue}", content: null, cts.Token);
+        Assert.Equal(HttpStatusCode.Created, firstWriteResponse.StatusCode);
 
-        var verifyResponse = await verifier.GetAsync($"/groups/{tenantName}", cts.Token);
+        using HttpResponseMessage secondWriteResponse = await writer.PostAsync($"/groups/{secondDatabaseName}/{secondValue}", content: null, cts.Token);
+        Assert.Equal(HttpStatusCode.Created, secondWriteResponse.StatusCode);
+
+        await WaitForRestoreAsync(verifier, $"/restore/groups/{firstDatabaseName}", cts.Token);
+        await WaitForRestoreAsync(verifier, $"/restore/groups/{secondDatabaseName}", cts.Token);
+
+        await AssertGroupValueAsync(verifier, firstDatabaseName, firstValue, cts.Token);
+        await AssertGroupValueAsync(verifier, secondDatabaseName, secondValue, cts.Token);
+    }
+
+    private static async Task AssertGroupValueAsync(HttpClient verifier, string databaseName, string expectedValue, CancellationToken cancellationToken)
+    {
+        using HttpResponseMessage verifyResponse = await verifier.GetAsync($"/groups/{databaseName}", cancellationToken);
         string? verifiedValue = null;
 
         if (verifyResponse.IsSuccessStatusCode)
         {
-            var payload = await verifyResponse.Content.ReadFromJsonAsync<GroupValuePayload>(cancellationToken: cts.Token);
+            GroupValuePayload? payload = await verifyResponse.Content.ReadFromJsonAsync<GroupValuePayload>(cancellationToken: cancellationToken);
             verifiedValue = payload?.Value;
         }
 
         Assert.True(
-            verifyResponse.StatusCode == HttpStatusCode.OK && verifiedValue == value,
-            $"Expected verifier to observe replicated grouped-database value '{value}' for '{tenantName}', but got status {(int)verifyResponse.StatusCode} and value '{verifiedValue ?? "<null>"}'.");
+            verifyResponse.StatusCode == HttpStatusCode.OK && verifiedValue == expectedValue,
+            $"Expected verifier to observe replicated grouped-database value '{expectedValue}' for '{databaseName}', but got status {(int)verifyResponse.StatusCode} and value '{verifiedValue ?? "<null>"}'.");
     }
 
     private async Task WaitForHarnessAsync(CancellationToken cancellationToken)
@@ -91,17 +111,47 @@ public class LitestreamHarnessTests(
         await fixture.ResourceNotificationService.WaitForResourceHealthyAsync("minio", cancellationToken).WaitAsync(cancellationToken);
         await fixture.ResourceNotificationService.WaitForResourceHealthyAsync("writer", cancellationToken).WaitAsync(cancellationToken);
         await fixture.ResourceNotificationService.WaitForResourceHealthyAsync("verifier", cancellationToken).WaitAsync(cancellationToken);
+        await fixture.ResourceNotificationService.WaitForResourceAsync("writer-single-litestream", KnownResourceStates.Running, cancellationToken).WaitAsync(cancellationToken);
+        await fixture.ResourceNotificationService.WaitForResourceAsync("writer-group-litestream", KnownResourceStates.Running, cancellationToken).WaitAsync(cancellationToken);
+    }
+
+    private static async Task WaitForRestoreAsync(HttpClient verifier, string path, CancellationToken cancellationToken)
+    {
+        DateTimeOffset deadline = DateTimeOffset.UtcNow.AddMinutes(2);
+        HttpStatusCode? lastStatusCode = null;
+        string? lastResponseBody = null;
+
+        while (DateTimeOffset.UtcNow < deadline)
+        {
+            using HttpResponseMessage response = await verifier.PostAsync(path, content: null, cancellationToken);
+            lastStatusCode = response.StatusCode;
+            lastResponseBody = await response.Content.ReadAsStringAsync(cancellationToken);
+
+            if (response.StatusCode == HttpStatusCode.OK)
+            {
+                return;
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
+        }
+
+        throw new TimeoutException(
+            $"Timed out waiting for restore endpoint '{path}' to succeed. Last response: {(int?)lastStatusCode} {lastStatusCode}; body: {lastResponseBody ?? "<empty>"}");
     }
 
     private sealed class HarnessConfiguration
     {
         public required string Role { get; init; }
 
+        public required string StorageRoot { get; init; }
+
         public required string SingleDatabasePath { get; init; }
 
         public required string GroupDatabaseDirectory { get; init; }
 
         public required string ReplicaBucketName { get; init; }
+
+        public required string[] SeededGroupDatabaseNames { get; init; }
     }
 
     private sealed class ValuePayload

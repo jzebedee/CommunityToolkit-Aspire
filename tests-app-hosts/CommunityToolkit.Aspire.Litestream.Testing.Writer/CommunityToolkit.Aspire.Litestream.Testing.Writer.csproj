@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <ItemGroup>
+    <PackageReference Include="Minio" />
     <PackageReference Include="Microsoft.Data.Sqlite" />
   </ItemGroup>
 

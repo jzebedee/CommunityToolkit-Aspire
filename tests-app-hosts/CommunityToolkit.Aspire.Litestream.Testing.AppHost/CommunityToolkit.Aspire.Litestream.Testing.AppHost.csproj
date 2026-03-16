@@ -5,6 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\CommunityToolkit.Aspire.Hosting.Litestream\CommunityToolkit.Aspire.Hosting.Litestream.csproj" IsAspireProjectResource="false" />
     <ProjectReference Include="..\..\src\CommunityToolkit.Aspire.Hosting.Minio\CommunityToolkit.Aspire.Hosting.Minio.csproj" IsAspireProjectResource="false" />
     <ProjectReference Include="..\CommunityToolkit.Aspire.Litestream.Testing.Verifier\CommunityToolkit.Aspire.Litestream.Testing.Verifier.csproj" />
     <ProjectReference Include="..\CommunityToolkit.Aspire.Litestream.Testing.Writer\CommunityToolkit.Aspire.Litestream.Testing.Writer.csproj" />

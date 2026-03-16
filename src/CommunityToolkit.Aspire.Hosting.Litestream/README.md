@@ -49,6 +49,25 @@ var litestream = builder.AddLitestream("litestream")
 
 Use `WithDataVolume(...)` or `WithDataBindMount(...)` to place the SQLite files in a location that both your application and the Litestream sidecar can share.
 
+## Development test harness
+
+The repository includes a Docker-gated Aspire test harness for this integration under:
+
+- `tests-app-hosts\CommunityToolkit.Aspire.Litestream.Testing.AppHost`
+- `tests\CommunityToolkit.Aspire.Hosting.Litestream.Tests`
+
+That harness provisions MinIO as the default S3-compatible target and validates the `add-litestream-integration` MVP with separate writer and verifier applications. Contributors should run it with the repository's existing .NET test-project pattern:
+
+```dotnetcli
+dotnet run --project .\tests\CommunityToolkit.Aspire.Hosting.Litestream.Tests\CommunityToolkit.Aspire.Hosting.Litestream.Tests.csproj --configuration Debug
+```
+
+Docker is required because the harness starts MinIO plus Litestream sidecars and also uses a one-off Litestream container for verifier restores.
+
+### Test-only restore boundary
+
+The verifier project's `/restore/*` endpoints exist only for harness recovery tests. They are intentionally scoped to `tests-app-hosts\CommunityToolkit.Aspire.Litestream.Testing.Verifier` so the public MVP integration surface remains limited to AppHost-side Litestream resource configuration rather than runtime restore helpers.
+
 ## Additional Information
 
 https://github.com/CommunityToolkit/Aspire

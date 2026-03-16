@@ -1,4 +1,7 @@
 using Microsoft.Data.Sqlite;
+using Minio;
+using Minio.DataModel.Args;
+using System.Data.Common;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +14,11 @@ var singleDatabasePath = GetRequiredSetting(builder.Configuration, "Harness:Sing
 var groupDatabaseDirectory = GetRequiredSetting(builder.Configuration, "Harness:GroupDatabaseDirectory");
 var replicaBucketName = GetRequiredSetting(builder.Configuration, "Harness:ReplicaBucketName");
 var scenarioRole = GetRequiredSetting(builder.Configuration, "Harness:ScenarioRole");
+var storageRoot = GetRequiredSetting(builder.Configuration, "Harness:StorageRoot");
+string[] seededGroupDatabaseNames = GetSeededGroupDatabaseNames(builder.Configuration);
+
+await EnsureReplicaBucketAsync(builder.Configuration, replicaBucketName);
+await EnsureSeededGroupDatabasesAsync(groupDatabaseDirectory, seededGroupDatabaseNames);
 
 var app = builder.Build();
 
@@ -21,9 +29,11 @@ app.MapGet("/", () => Results.Ok(new { role = scenarioRole }));
 app.MapGet("/config", () => Results.Ok(new
 {
     Role = scenarioRole,
+    StorageRoot = storageRoot,
     SingleDatabasePath = singleDatabasePath,
     GroupDatabaseDirectory = groupDatabaseDirectory,
     ReplicaBucketName = replicaBucketName,
+    SeededGroupDatabaseNames = seededGroupDatabaseNames,
 }));
 
 app.MapPost("/single/{value}", async (string value) =>
@@ -81,6 +91,12 @@ static string GetGroupedDatabasePath(string directoryPath, string databaseName)
     return Path.Combine(directoryPath, $"{databaseName}.db");
 }
 
+static string[] GetSeededGroupDatabaseNames(IConfiguration configuration)
+{
+    return (configuration["Harness:SeededGroupDatabaseNames"] ?? string.Empty)
+        .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+}
+
 static async Task EnsureSchemaAsync(string databasePath)
 {
     Directory.CreateDirectory(Path.GetDirectoryName(databasePath) ?? throw new InvalidOperationException($"Invalid database path '{databasePath}'."));
@@ -121,4 +137,45 @@ static async Task<string?> ReadLatestValueAsync(string databasePath)
 
     var result = await command.ExecuteScalarAsync();
     return result?.ToString();
+}
+
+static async Task EnsureReplicaBucketAsync(IConfiguration configuration, string bucketName)
+{
+    string connectionString = configuration.GetConnectionString("minio")
+        ?? throw new InvalidOperationException("Missing MinIO connection string.");
+
+    DbConnectionStringBuilder builder = new()
+    {
+        ConnectionString = connectionString,
+    };
+
+    string endpoint = builder["Endpoint"]?.ToString()
+        ?? throw new InvalidOperationException("Missing MinIO endpoint.");
+    string accessKey = builder["AccessKey"]?.ToString()
+        ?? throw new InvalidOperationException("Missing MinIO access key.");
+    string secretKey = builder["SecretKey"]?.ToString()
+        ?? throw new InvalidOperationException("Missing MinIO secret key.");
+
+    Uri endpointUri = new(endpoint, UriKind.Absolute);
+    IMinioClient client = new MinioClient()
+        .WithEndpoint(endpointUri.Host, endpointUri.Port)
+        .WithCredentials(accessKey, secretKey)
+        .WithSSL(endpointUri.Scheme == Uri.UriSchemeHttps)
+        .Build();
+
+    BucketExistsArgs existsArgs = new BucketExistsArgs()
+        .WithBucket(bucketName);
+
+    if (!await client.BucketExistsAsync(existsArgs))
+    {
+        await client.MakeBucketAsync(new MakeBucketArgs().WithBucket(bucketName));
+    }
+}
+
+static async Task EnsureSeededGroupDatabasesAsync(string groupDatabaseDirectory, IEnumerable<string> databaseNames)
+{
+    foreach (string databaseName in databaseNames)
+    {
+        await EnsureSchemaAsync(GetGroupedDatabasePath(groupDatabaseDirectory, databaseName));
+    }
 }

@@ -9,17 +9,17 @@
 - [x] 2.1 Configure the harness AppHost to provision MinIO as the default S3-compatible replication target for Litestream development tests.
 - [x] 2.2 Add shared storage and configuration setup for Litestream-managed single-database scenarios in the harness.
 - [x] 2.3 Add shared storage and configuration setup for Litestream-managed grouped or directory-based database scenarios in the harness.
-- [ ] 2.4 Add test-only restore or bootstrap behavior that lets a verifier application start from fresh local storage and recover from the remote Litestream target.
+- [x] 2.4 Add test-only restore or bootstrap behavior that lets a verifier application start from fresh local storage and recover from the remote Litestream target.
 
 ## 3. Add end-to-end replication tests
 
 - [x] 3.1 Add a Docker-gated Aspire test that proves single-database writes are replicated through MinIO and visible to a separate verifier application.
 - [x] 3.2 Add a Docker-gated Aspire test that proves grouped or directory-based database changes are replicated through MinIO and visible after verifier recovery.
 - [x] 3.3 Add assertions that the harness relies on remote replication artifacts or remote-backed recovery rather than only shared local file access.
-- [ ] 3.4 Add logging, wait conditions, and cleanup behavior needed to keep the replication tests diagnosable and stable in development and CI.
+- [x] 3.4 Add logging, wait conditions, and cleanup behavior needed to keep the replication tests diagnosable and stable in development and CI.
 
 ## 4. Document and integrate the harness
 
-- [ ] 4.1 Document the Litestream development harness, including its MinIO dependency, Docker requirement, and its role in validating `add-litestream-integration`.
-- [ ] 4.2 Add the new test project(s) to the repository's generated test list and CI workflow coverage.
-- [ ] 4.3 Document the boundary between test-only restore/bootstrap logic and the public Litestream MVP integration surface.
+- [x] 4.1 Document the Litestream development harness, including its MinIO dependency, Docker requirement, and its role in validating `add-litestream-integration`.
+- [x] 4.2 Add the new test project(s) to the repository's generated test list and CI workflow coverage.
+- [x] 4.3 Document the boundary between test-only restore/bootstrap logic and the public Litestream MVP integration surface.
