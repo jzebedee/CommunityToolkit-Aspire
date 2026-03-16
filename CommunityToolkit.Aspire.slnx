@@ -232,6 +232,7 @@
     <Project Path="src/CommunityToolkit.Aspire.Hosting.Rust/CommunityToolkit.Aspire.Hosting.Rust.csproj" />
     <Project Path="src/CommunityToolkit.Aspire.Hosting.Sftp/CommunityToolkit.Aspire.Hosting.Sftp.csproj" />
     <Project Path="src/CommunityToolkit.Aspire.Hosting.Solr/CommunityToolkit.Aspire.Hosting.Solr.csproj" />
+    <Project Path="src/CommunityToolkit.Aspire.Hosting.Litestream/CommunityToolkit.Aspire.Hosting.Litestream.csproj" />
     <Project Path="src/CommunityToolkit.Aspire.Hosting.SqlDatabaseProjects/CommunityToolkit.Aspire.Hosting.SqlDatabaseProjects.csproj" />
     <Project Path="src/CommunityToolkit.Aspire.Hosting.Sqlite/CommunityToolkit.Aspire.Hosting.Sqlite.csproj" />
     <Project Path="src/CommunityToolkit.Aspire.Hosting.SqlServer.Extensions/CommunityToolkit.Aspire.Hosting.SqlServer.Extensions.csproj" />
@@ -241,6 +242,7 @@
     <Project Path="src/CommunityToolkit.Aspire.KurrentDB/CommunityToolkit.Aspire.KurrentDB.csproj" />
     <Project Path="src/CommunityToolkit.Aspire.MassTransit.RabbitMQ/CommunityToolkit.Aspire.MassTransit.RabbitMQ.csproj" />
     <Project Path="src/CommunityToolkit.Aspire.Meilisearch/CommunityToolkit.Aspire.Meilisearch.csproj" />
+    <Project Path="src/CommunityToolkit.Aspire.Litestream/CommunityToolkit.Aspire.Litestream.csproj" />
     <Project Path="src/CommunityToolkit.Aspire.Microsoft.Data.Sqlite/CommunityToolkit.Aspire.Microsoft.Data.Sqlite.csproj" />
     <Project Path="src/CommunityToolkit.Aspire.Microsoft.EntityFrameworkCore.Sqlite/CommunityToolkit.Aspire.Microsoft.EntityFrameworkCore.Sqlite.csproj" />
     <Project Path="src/CommunityToolkit.Aspire.Minio.Client/CommunityToolkit.Aspire.Minio.Client.csproj" />
@@ -276,6 +278,7 @@
     <Project Path="tests/CommunityToolkit.Aspire.Hosting.Keycloak.Extensions.Tests/CommunityToolkit.Aspire.Hosting.Keycloak.Extensions.Tests.csproj" />
     <Project Path="tests/CommunityToolkit.Aspire.Hosting.KurrentDB.Tests/CommunityToolkit.Aspire.Hosting.KurrentDB.Tests.csproj" />
     <Project Path="tests/CommunityToolkit.Aspire.Hosting.LavinMQ.Tests/CommunityToolkit.Aspire.Hosting.LavinMQ.Tests.csproj" />
+    <Project Path="tests/CommunityToolkit.Aspire.Hosting.Litestream.Tests/CommunityToolkit.Aspire.Hosting.Litestream.Tests.csproj" />
     <Project Path="tests/CommunityToolkit.Aspire.Hosting.MailPit.Tests/CommunityToolkit.Aspire.Hosting.MailPit.Tests.csproj" />
     <Project Path="tests/CommunityToolkit.Aspire.Hosting.McpInspector.Tests/CommunityToolkit.Aspire.Hosting.McpInspector.Tests.csproj" />
     <Project Path="tests/CommunityToolkit.Aspire.Hosting.Meilisearch.Tests/CommunityToolkit.Aspire.Hosting.Meilisearch.Tests.csproj" />
@@ -301,6 +304,7 @@
     <Project Path="tests/CommunityToolkit.Aspire.Hosting.Zitadel.Tests/CommunityToolkit.Aspire.Hosting.Zitadel.Tests.csproj" />
     <Project Path="tests/CommunityToolkit.Aspire.KurrentDB.Tests/CommunityToolkit.Aspire.KurrentDB.Tests.csproj" />
     <Project Path="tests/CommunityToolkit.Aspire.MassTransit.RabbitMQ.Tests/CommunityToolkit.Aspire.MassTransit.RabbitMQ.Tests.csproj" />
+    <Project Path="tests/CommunityToolkit.Aspire.Litestream.Tests/CommunityToolkit.Aspire.Litestream.Tests.csproj" />
     <Project Path="tests/CommunityToolkit.Aspire.Meilisearch.Tests/CommunityToolkit.Aspire.Meilisearch.Tests.csproj" />
     <Project Path="tests/CommunityToolkit.Aspire.Microsoft.Data.Sqlite.Tests/CommunityToolkit.Aspire.Microsoft.Data.Sqlite.Tests.csproj" />
     <Project Path="tests/CommunityToolkit.Aspire.Microsoft.EntityFrameworkCore.Sqlite.Tests/CommunityToolkit.Aspire.Microsoft.EntityFrameworkCore.Sqlite.Tests.csproj" />
@@ -318,6 +322,9 @@
     <Project Path="tests/CommunityToolkit.Aspire.Hosting.Dapr.Tests/CommunityToolkit.Aspire.Hosting.Dapr.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/tests-app-hosts/">
+    <Project Path="tests-app-hosts/CommunityToolkit.Aspire.Litestream.Testing.AppHost/CommunityToolkit.Aspire.Litestream.Testing.AppHost.csproj" />
+    <Project Path="tests-app-hosts/CommunityToolkit.Aspire.Litestream.Testing.Verifier/CommunityToolkit.Aspire.Litestream.Testing.Verifier.csproj" />
+    <Project Path="tests-app-hosts/CommunityToolkit.Aspire.Litestream.Testing.Writer/CommunityToolkit.Aspire.Litestream.Testing.Writer.csproj" />
     <Project Path="tests-app-hosts/Ollama.AppHost/Ollama.AppHost.csproj" />
   </Folder>
 </Solution>

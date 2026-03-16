@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\CommunityToolkit.Aspire.Hosting.Litestream\CommunityToolkit.Aspire.Hosting.Litestream.csproj" />
+    <ProjectReference Include="..\..\tests-app-hosts\CommunityToolkit.Aspire.Litestream.Testing.AppHost\CommunityToolkit.Aspire.Litestream.Testing.AppHost.csproj" />
+    <ProjectReference Include="..\CommunityToolkit.Aspire.Testing\CommunityToolkit.Aspire.Testing.csproj" />
+  </ItemGroup>
+
+</Project>
