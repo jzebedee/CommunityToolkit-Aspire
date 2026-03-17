@@ -123,8 +123,8 @@ public sealed class LitestreamResource(string name) : ContainerResource(name)
         {
             builder.AppendLine($"    dir: {Quote(ResolveDatabasePath(DatabasePathOrDirectory))}");
             builder.AppendLine($"    pattern: {Quote(Pattern)}");
-            builder.AppendLine($"    recursive: {FormatBoolean(Recursive)}");
-            builder.AppendLine($"    watch: {FormatBoolean(Watch)}");
+            builder.AppendLine($"    recursive: {YamlBool(Recursive)}");
+            builder.AppendLine($"    watch: {YamlBool(Watch)}");
         }
 
         builder.AppendLine("    replica:");
@@ -188,34 +188,23 @@ public sealed class LitestreamResource(string name) : ContainerResource(name)
             throw new InvalidOperationException($"Litestream resource '{Name}' is missing its configured database path.");
         }
 
-        if (IsRooted(configuredPath))
+        if (Path.IsPathRooted(configuredPath))
         {
             return NormalizePath(configuredPath);
         }
 
-        return CombineContainerPath(DatabaseRootPath, configuredPath);
+        return NormalizePath(Path.Join(DatabaseRootPath, configuredPath));
     }
 
-    private static string NormalizePath(string value) => value.Replace('\\', '/');
+    private static string NormalizePath(string value)
+        => value.Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
 
-    private static bool IsRooted(string value) =>
-        value.StartsWith("/", StringComparison.Ordinal) ||
-        value.StartsWith("\\", StringComparison.Ordinal) ||
-        Path.IsPathRooted(value);
 
-    private static string CombineContainerPath(string root, string child)
-    {
-        string normalizedRoot = NormalizePath(root).TrimEnd('/');
-        string normalizedChild = NormalizePath(child).TrimStart('/');
-        return $"{normalizedRoot}/{normalizedChild}";
-    }
-
-    private static string FormatBoolean(bool value) => value ? "true" : "false";
+    private static string YamlBool(bool value)
+        => value ? "true" : "false";
 
     private static string Quote(string? value)
-    {
-        return $"'{value?.Replace("'", "''", StringComparison.Ordinal) ?? string.Empty}'";
-    }
+        => $"'{value?.Replace("'", "''", StringComparison.Ordinal) ?? string.Empty}'";
 }
 
 internal enum LitestreamDatabaseMode
