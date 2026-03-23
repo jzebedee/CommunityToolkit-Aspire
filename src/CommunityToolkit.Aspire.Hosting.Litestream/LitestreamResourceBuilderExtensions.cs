@@ -1,6 +1,4 @@
 using Aspire.Hosting.ApplicationModel;
-using Aspire.Hosting.Azure;
-using CommunityToolkit.Aspire.Hosting.Minio;
 
 namespace Aspire.Hosting;
 
@@ -172,67 +170,4 @@ public static class LitestreamResourceBuilderExtensions
         return builder;
     }
 
-    /// <summary>
-    /// Configures a MinIO-backed S3 replica target.
-    /// </summary>
-    /// <param name="builder">The Litestream resource builder.</param>
-    /// <param name="minio">The MinIO resource to use as the replica endpoint.</param>
-    /// <param name="bucket">The target bucket name.</param>
-    /// <param name="path">The target path within the bucket.</param>
-    /// <returns>The resource builder.</returns>
-    public static IResourceBuilder<LitestreamResource> WithMinioReplica(
-        this IResourceBuilder<LitestreamResource> builder,
-        IResourceBuilder<MinioContainerResource> minio,
-        string bucket,
-        string path)
-    {
-        ArgumentNullException.ThrowIfNull(builder);
-        ArgumentNullException.ThrowIfNull(minio);
-
-        builder.Resource.ConfigureS3Replica(bucket, path, region: null, forcePathStyle: true, skipVerify: false, hasEndpoint: true);
-
-        return builder
-            .WaitFor(minio)
-            .WithEnvironment(S3EndpointEnvironmentVariable, minio.Resource.UriExpression)
-            .WithEnvironment(S3AccessKeyEnvironmentVariable, minio.Resource.RootUser)
-            .WithEnvironment(S3SecretKeyEnvironmentVariable, minio.Resource.PasswordParameter);
-    }
-
-    /// <summary>
-    /// Configures an Azure Blob Storage replica target.
-    /// </summary>
-    /// <param name="builder">The Litestream resource builder.</param>
-    /// <param name="blobs">The Azure Blob Storage resource to use as the replica target.</param>
-    /// <param name="containerName">The Azure Blob Storage container name.</param>
-    /// <param name="path">The target path within the blob container.</param>
-    /// <param name="accountKey">The optional Azure storage account key parameter.</param>
-    /// <returns>The resource builder.</returns>
-    public static IResourceBuilder<LitestreamResource> WithAzureBlobReplica(
-        this IResourceBuilder<LitestreamResource> builder,
-        IResourceBuilder<AzureBlobStorageResource> blobs,
-        string containerName,
-        string path,
-        IResourceBuilder<ParameterResource>? accountKey = null)
-    {
-        ArgumentNullException.ThrowIfNull(builder);
-        ArgumentNullException.ThrowIfNull(blobs);
-
-        builder.Resource.ConfigureAzureBlobReplica(containerName, path);
-
-        builder = builder
-            .WaitFor(blobs)
-            .WithEnvironment(context =>
-            {
-                context.EnvironmentVariables[AzureAccountNameEnvironmentVariable] = blobs.Resource.Parent.IsEmulator
-                    ? AzureStorageEmulatorAccountName
-                    : blobs.Resource.Parent.NameOutputReference;
-            });
-
-        if (accountKey is not null)
-        {
-            builder.WithEnvironment(AzureAccountKeyEnvironmentVariable, accountKey.Resource);
-        }
-
-        return builder;
-    }
 }

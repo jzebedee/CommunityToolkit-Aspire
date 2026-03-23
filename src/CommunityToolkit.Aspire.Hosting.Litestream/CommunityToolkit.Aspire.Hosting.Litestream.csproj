@@ -6,11 +6,6 @@
 
   <ItemGroup>
     <PackageReference Include="Aspire.Hosting" />
-    <PackageReference Include="Aspire.Hosting.Azure.Storage" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\CommunityToolkit.Aspire.Hosting.Minio\CommunityToolkit.Aspire.Hosting.Minio.csproj" />
   </ItemGroup>
 
   <ItemGroup>
